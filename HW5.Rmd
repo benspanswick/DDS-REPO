@@ -1,0 +1,152 @@
+---
+title: "HW5"
+author: "Ben Spanswick"
+date: "September 29, 2018"
+output: html_document
+---
+
+a.	First, import the .txt file into R so you can process it.  Keep in mind this is not a CSV file.  You might have to open the file to see what you’re dealing with.  Assign the resulting data frame to an object, df, that consists of three columns with human-readable column names for each.
+
+```{r, echo=TRUE}
+getwd()
+names <- read.table("yob2016.txt", header = FALSE, sep = ";")
+
+df<- data.frame(names)
+x <- c("name", "gender", "count")
+
+colnames(df)<-x
+
+head(df)
+
+
+```
+
+b.	Display the summary and structure of df
+
+```{r}
+str(df)
+summary(df)
+
+
+```
+
+c.	Your client tells you that there is a problem with the raw file.  One name was entered twice and misspelled.  The client cannot remember which name it is; there are thousands he saw! But he did mention he accidentally put three y’s at the end of the name.  Write an R command to figure out which name it is and display it.
+
+
+```{r}
+
+misspelling = df[grep("yyy",df$name),]
+
+misspelling
+
+```
+
+d.	Upon finding the misspelled name, please remove this particular observation, as the client says it’s redundant.  Save the remaining dataset as an object: y2016 
+
+```{r}
+
+#y2016 <- df[!grepl("Fionayyy", df$name),]
+
+#Better to just drop by row 212
+
+y2016 <- df[-c(212)]
+            
+y2016[212,]
+                        
+head(y2016)
+```
+
+a.	Like 1a, please import the .txt file into R.  Look at the file before you do.  You might have to change some options to import it properly.  Again, please give the dataframe human-readable column names.  Assign the dataframe to y2015.  
+
+```{r}
+
+yob2015 <- read.table("yob2015.txt", header = FALSE, sep = ",")
+
+y2015 = data.frame(yob2015)
+
+colnames(y2015)<-x
+
+
+
+
+```
+
+b.	Display the last ten rows in the dataframe.  Describe something you find interesting about these 10 rows.
+
+They all have the same count.
+
+```{r}
+
+tail(y2015, 10)
+```
+
+c.	Merge y2016 and y2015 by your Name column; assign it to final.  The client only cares about names that have data for both 2016 and 2015; there should be no NA values in either of your amount of children rows after merging.
+
+
+
+```{r}
+#Note: Although the HW only says to merge by name here, I found later I was getting strange results where genders were crossed, not sure if that was something with the data or user error, but I added 'gender' to merge so that it solved the issue. 
+
+final <- merge(y2015,y2016,by=c("name","gender"), all = TRUE)
+
+final <- na.omit(final)
+
+head(final)
+
+```
+
+a.	Create a new column called “Total” in final that adds the amount of children in 2015 and 2016 together.  In those two years combined, how many people were given popular names?
+
+NOTE: Not sure how you define "given popular names", need more information. Just printed out the top .1% of individuals. 
+
+
+```{r}
+
+
+final["total"] <- as.numeric(with(final, count.x + count.y))
+
+head(final)
+
+```
+```{r}
+n <-.1
+final[final$total > quantile(final$total,prob=1-n/100),]
+
+```
+
+b.	Sort the data by Total.  What are the top 10 most popular names?
+
+```{r}
+
+#Just creating new objects here so that I dont have to keep rerunning earlier code if I goof. 
+
+sort <- final
+
+sort$total <- formatC(sort$total)
+
+sorted <- sort[order( sort$total),]
+
+head(sorted, 10) 
+
+
+```
+
+c.	The client is expecting a girl!  Omit boys and give the top 10 most popular girl’s names.
+
+```{r}
+library(dplyr)
+
+popular_girls = filter(sorted, sorted$gender == "F")
+
+popular_girls <- head(popular_girls, 10)
+
+popular_girls
+
+```
+
+```{r}
+
+write.csv(popular_girls[,c("name","total")], file="outfile.csv",row.names=TRUE)
+
+```
+
